@@ -1,6 +1,6 @@
 library(shiny)
 library(dplyr)
-
+library(ggplot2)
 
 conjointApp <- function(...){
   ui <- fluidPage(
@@ -13,24 +13,36 @@ conjointApp <- function(...){
                                      choices=c("Part-Worths (PW)", "Importance Weights (IW)"),
                                       width="100%"))
                ),
-      plotOutput("pw")
+      plotOutput("info")
       
   )
   
   server <- function(input, output) {
-    filtered <- reactive({
+    selected <- reactive({
       icecream %>% 
         filter(("All" == input$resp) | (respondent %in% input$resp)) %>%
         select(-profile, -respondent)
     })
     
-    data_pw <- reactive({
-      mod <- lm(ratings ~ ., data = filtered())
-      model_to_pw(mod)
+    mod <- reactive({
+      lm(ratings ~ ., data = selected())
     })
     
-    output$pw <- renderPlot({
-        viz_pw(data_pw())
+    pw <- reactive({
+      mod_to_pw(mod())
+    })
+    
+    iw <- reactive({
+      pw_to_iw(pw())
+    })
+    
+    
+    output$info <- renderPlot({
+        if (input$metric == "Part-Worths (PW)"){
+          plot_pw(pw())
+        }else if(input$metric == "Importance Weights (IW)"){
+          plot_iw(iw())
+        }
     }, res = 96)
     
   }
