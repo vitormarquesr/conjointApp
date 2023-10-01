@@ -18,30 +18,46 @@ conjointApp <- function(...){
   )
   
   server <- function(input, output) {
-    selected <- reactive({
+    filtered <- reactive({
       icecream %>% 
         filter(("All" == input$resp) | (respondent %in% input$resp)) %>%
         select(-profile, -respondent)
     })
     
-    mod <- reactive({
-      lm(ratings ~ ., data = selected())
-    })
+    mdl <- reactive(lm(ratings ~ ., data = filtered()))
     
-    pw <- reactive({
-      mod_to_pw(mod())
-    })
+    part_worths <- reactive(lm_part_worths(mdl()))
     
-    iw <- reactive({
-      pw_to_iw(pw())
+    impt_weights <- reactive({
+      part_worths() %>%
+        group_by(feature) %>%
+        summarize(iw = abs(max(pw) - min(pw))) %>%
+        mutate(iw = iw/sum(iw))
     })
-    
     
     output$info <- renderPlot({
+        thm <- theme_linedraw() +
+            theme(axis.text.x = element_text(angle = 45, vjust = 0.95, hjust = 1))
+          
         if (input$metric == "Part-Worths (PW)"){
-          plot_pw(pw())
+          part_worths() %>%
+            ggplot(aes(x=level, y=pw, group=1))+
+              geom_point(size=5)+
+              geom_line(linetype=4)+
+              facet_wrap(~feature,
+                         scales = "free") + 
+              labs(x = "", y = "Part-Worths (PW)") +
+              thm
+          
         }else if(input$metric == "Importance Weights (IW)"){
-          plot_iw(iw())
+          impt_weights() %>%
+            ggplot(aes(y=iw, x = feature)) +
+              geom_col()+
+              labs(x = "", y = "Importance-Weights (IW)") +
+              ylim(c(0, 1)) +
+              geom_text(aes(y = iw, label = paste0(round(iw*100,2), "%")),
+                        vjust = -0.5) +
+              thm
         }
     }, res = 96)
     
