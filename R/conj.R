@@ -9,13 +9,14 @@ conjUI <- function(id){
             tabPanel("PW", plotOutput(NS(id, "pworths"))),
             tabPanel("IW",plotOutput(NS(id, "iweights"))),
             tabPanel("Predict", 
-                     column(7, map(varsIcecream(), 
+                     column(5, map(varsIcecream(), 
                               function(x) selectInput(NS(id, x), x, 
                                                       choices = pull(icecream, x),
-                                                      selected = TRUE))
+                                                      selected = TRUE,
+                                                      width="100%"))
                                         ),
                              
-                        column(5, verbatimTextOutput(NS(id, 'prediction')))
+                        column(7, plotOutput(NS(id, 'prediction')))
                      )
                      
             )
@@ -67,14 +68,22 @@ conjServer <- function(id){
     }, res=96)
     
     
-    output$prediction <- renderPrint({
+    output$prediction <- renderPlot({
       newdata <- lapply(varsIcecream(), function(x) input[[x]])
       names(newdata) <- varsIcecream()
       newdata <- as_tibble(newdata)
       
-      predict(mdl(), newdata)
-      
-    }, width='10000')
+      tibble(y_fitted = predict(mdl(), newdata),
+             rating = "") %>%
+        ggplot(aes(x=rating, y=y_fitted))+
+            geom_col()+
+            coord_cartesian(ylim=c(-max(icecream$ratings)*0.4, max(icecream$ratings)*1.4))+
+            labs(x = "", y = "", title = "Predicted Rating")+
+            geom_text(aes(y = y_fitted, label = round(y_fitted,2)),
+                  vjust = -0.5)+
+            theme_linedraw()
+            
+      }, res=96)
   })
 }
 
