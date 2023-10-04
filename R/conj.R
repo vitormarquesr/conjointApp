@@ -1,3 +1,4 @@
+varsIcecream <- function() colnames(icecream)[2:5]
 
 conjUI <- function(id){
     tagList(
@@ -7,7 +8,16 @@ conjUI <- function(id){
           tabsetPanel(
             tabPanel("PW", plotOutput(NS(id, "pworths"))),
             tabPanel("IW",plotOutput(NS(id, "iweights"))),
-            tabPanel("Predict")
+            tabPanel("Predict", 
+                     column(7, map(varsIcecream(), 
+                              function(x) selectInput(NS(id, x), x, 
+                                                      choices = pull(icecream, x),
+                                                      selected = TRUE))
+                                        ),
+                             
+                        column(5, verbatimTextOutput(NS(id, 'prediction')))
+                     )
+                     
             )
           )
 }
@@ -31,7 +41,6 @@ conjServer <- function(id){
         summarize(iw = abs(max(pw) - min(pw))) %>%
         mutate(iw = iw/sum(iw))
     })
-    
     
     output$pworths <- renderPlot({
       part_worths() %>%
@@ -57,6 +66,15 @@ conjServer <- function(id){
         theme(axis.text.x = element_text(angle = 45, vjust = 0.95, hjust = 1))
     }, res=96)
     
+    
+    output$prediction <- renderPrint({
+      newdata <- lapply(varsIcecream(), function(x) input[[x]])
+      names(newdata) <- varsIcecream()
+      newdata <- as_tibble(newdata)
+      
+      predict(mdl(), newdata)
+      
+    }, width='10000')
   })
 }
 

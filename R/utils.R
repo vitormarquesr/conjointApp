@@ -6,3 +6,5 @@ lm_part_worths <- function(m){
                             function(x) c(0, m$coefficients[m$assign == x]))))
 }
 
+
+
