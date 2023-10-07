@@ -6,8 +6,8 @@ conjUI <- function(id){
           selectInput(NS(id, "resp"), "Respondent", 
                       choices = c("All", unique(icecream$respondent))),
           tabsetPanel(
-            tabPanel("PW", plotOutput(NS(id, "pworths"))),
-            tabPanel("IW",plotOutput(NS(id, "iweights"))),
+            tabPanel("Part Worths (PW)", plotOutput(NS(id, "pworths"))),
+            tabPanel("Importance Weights (IW)",plotOutput(NS(id, "iweights"))),
             tabPanel("Predict", 
                      column(5, map(varsIcecream(), 
                               function(x) selectInput(NS(id, x), x, 

@@ -2,11 +2,15 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(purrr)
+library(readr)
 
 conjointApp <- function(...){
-  ui <- fluidPage(
-    titlePanel("Conjoint Analysis GUI"),
-    conjUI("conj1")
+  ui <- navbarPage(
+    "Conjoint App",
+    tabPanel("Settings"),
+    tabPanel("Conjoint", conjUI("conj1")),
+    tabPanel("Market Prediction"),
+    tabPanel("Price Optimization")
   )
   
   server <- function(input, output, session) {
