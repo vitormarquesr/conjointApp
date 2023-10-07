@@ -6,5 +6,7 @@ lm_part_worths <- function(m){
                             function(x) c(0, m$coefficients[m$assign == x]))))
 }
 
-
+find_vars <- function(data, filter = function(x) TRUE){
+  names(data)[vapply(data, filter, logical(1))]
+}
 

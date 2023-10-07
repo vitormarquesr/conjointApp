@@ -8,13 +8,13 @@ conjointApp <- function(...){
   ui <- navbarPage(
     "Conjoint App",
     tabPanel("Settings"),
-    tabPanel("Conjoint", conjUI("conj1")),
+    tabPanel("Conjoint", conjUI("conj")),
     tabPanel("Market Prediction"),
     tabPanel("Price Optimization")
   )
   
   server <- function(input, output, session) {
-    conjServer("conj1")
+    conjServer("conj")
   }
   shinyApp(ui, server)
 

@@ -89,11 +89,11 @@ conjServer <- function(id){
 
 conjApp <- function(){
   ui <- fluidPage(
-    conjUI("conj1")
+    conjUI("conj")
   )
   
   server <- function(input, output, session){
-    conjServer("conj1")
+    conjServer("conj")
   }
   
   shinyApp(ui, server)

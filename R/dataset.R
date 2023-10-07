@@ -4,9 +4,7 @@ datasetInput <- function(id){
     fileInput(NS(id, "upload"), "Upload", accept = ".csv", width="100%"),
     selectInput(NS(id, "example"), "Examples", 
                             choices = "icecream", width="100%"),
-    actionButton(NS(id, "load"), "Load", width="100%"),
-    
-    verbatimTextOutput(NS(id, "teste"))
+    actionButton(NS(id, "load"), "Load", width="100%")  
   )
 }
 
@@ -24,18 +22,16 @@ datasetServer <- function(id){
       }
     })
     
-    output$teste <- renderPrint(data())
-    
   })
 }
 
 datasetApp <- function(){
   ui <- fluidPage(
-    datasetInput("dataset1")
+    datasetInput("dataset")
   )
   
   server <- function(input, output, session){
-    datasetServer("dataset1")
+    datasetServer("dataset")
   }
   
   shinyApp(ui, server)
