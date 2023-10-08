@@ -1,35 +1,31 @@
-varsIcecream <- function() colnames(icecream)[2:5]
-
 conjUI <- function(id){
     tagList(
-          titlePanel("Conjoint Analysis"),
           selectInput(NS(id, "resp"), "Respondent", 
                       choices = c("All", unique(icecream$respondent))),
           tabsetPanel(
             tabPanel("Part Worths (PW)", plotOutput(NS(id, "pworths"))),
             tabPanel("Importance Weights (IW)",plotOutput(NS(id, "iweights"))),
-            tabPanel("Predict", 
-                     column(5, map(varsIcecream(), 
-                              function(x) selectInput(NS(id, x), x, 
-                                                      choices = pull(icecream, x),
-                                                      selected = TRUE,
-                                                      width="100%"))
-                                        ),
-                             
-                        column(7, plotOutput(NS(id, 'prediction')))
+            tabPanel("Predict", uiOutput(NS(id, "fcts")),
+                     column(7, plotOutput(NS(id, 'prediction')))
                      )
                      
             )
           )
 }
 
-conjServer <- function(id){
+conjServer <- function(id, data){
   moduleServer(id, function(input, output, session){
     
     filtered <- reactive({
-      icecream %>% 
+      data() %>% 
         filter(("All" == input$resp) | (respondent %in% input$resp)) %>%
         select(-profile, -respondent)
+    })
+    
+    name_factors <- reactive({
+      filtered() %>%
+        select(-ratings) %>%
+        names()
     })
     
     mdl <- reactive(lm(ratings ~ ., data = filtered()))
@@ -67,35 +63,33 @@ conjServer <- function(id){
         theme(axis.text.x = element_text(angle = 45, vjust = 0.95, hjust = 1))
     }, res=96)
     
+    output$fcts <- renderUI({
+      column(5, map(name_factors(), 
+                    function(x) selectInput(NS(id, x), x, 
+                                            choices = pull(filtered(), x),
+                                            selected = TRUE,
+                                            width="100%"))
+      )
+    })
     
     output$prediction <- renderPlot({
-      newdata <- lapply(varsIcecream(), function(x) input[[x]])
-      names(newdata) <- varsIcecream()
+      newdata <- lapply(name_factors(), function(x) input[[x]])
+      names(newdata) <- name_factors()
       newdata <- as_tibble(newdata)
       
       tibble(y_fitted = predict(mdl(), newdata),
              rating = "") %>%
         ggplot(aes(x=rating, y=y_fitted))+
             geom_col()+
-            coord_cartesian(ylim=c(-max(icecream$ratings)*0.4, max(icecream$ratings)*1.4))+
+            coord_cartesian(ylim=c(-max(filtered()$ratings)*0.4, max(filtered()$ratings)*1.4))+
             labs(x = "", y = "", title = "Predicted Rating")+
             geom_text(aes(y = y_fitted, label = round(y_fitted,2)),
                   vjust = -0.5)+
             theme_linedraw()
             
       }, res=96)
+    
   })
 }
 
-conjApp <- function(){
-  ui <- fluidPage(
-    conjUI("conj")
-  )
-  
-  server <- function(input, output, session){
-    conjServer("conj")
-  }
-  
-  shinyApp(ui, server)
-}
 

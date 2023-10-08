@@ -7,14 +7,15 @@ library(readr)
 conjointApp <- function(...){
   ui <- navbarPage(
     "Conjoint App",
-    tabPanel("Settings"),
+    tabPanel("Settings", settingsUI("settings")),
     tabPanel("Conjoint", conjUI("conj")),
     tabPanel("Market Prediction"),
     tabPanel("Price Optimization")
   )
   
   server <- function(input, output, session) {
-    conjServer("conj")
+    data <- settingsServer("settings")
+    conjServer("conj", data)
   }
   shinyApp(ui, server)
 

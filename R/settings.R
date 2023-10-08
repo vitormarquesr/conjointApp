@@ -5,8 +5,8 @@ settingsUI <- function(id){
     column(7, selectInput(NS(id, "profile"), "Profile", choices = NULL, width="100%"),
            selectInput(NS(id, "respondent"), "Respondent", choices = NULL, width="100%"),
            selectInput(NS(id, "ratings"), "Ratings", choices = NULL, width="100%"),
-           selectInput(NS(id, "price"), "Price", choices = NULL, width="100%")
-           )
+           selectInput(NS(id, "price"), "Price", choices = NULL, width="100%"),
+           actionButton(NS(id, "select"), "Select"))
   )
 }
 
@@ -22,7 +22,7 @@ settingsServer <- function(id){
                                                       find_vars(data(), is.numeric)))
     })
     
-    reactive({
+    data_new <- eventReactive(input$select, {
       data_new <- data()
       old_names <- c(input$profile, input$respondent, input$ratings)
       new_names <- c("profile", "respondent", "ratings")
@@ -34,6 +34,7 @@ settingsServer <- function(id){
       names(data_new)[match(old_names, names(data_new))] <- new_names
       data_new
     })
+    data_new
   })
 }
 
