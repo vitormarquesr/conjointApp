@@ -2,7 +2,7 @@
 datasetInput <- function(id){
   tagList(
     fileInput(NS(id, "upload"), "Upload", accept = ".csv", width="100%"),
-    selectInput(NS(id, "example"), "Examples", 
+    selectInput(NS(id, "example"), "Example", 
                             choices = "icecream", width="100%"),
     actionButton(NS(id, "load"), "Load", width="100%")  
   )

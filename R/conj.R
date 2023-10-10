@@ -5,7 +5,7 @@ conjUI <- function(id){
           tabsetPanel(
             tabPanel("Part Worths (PW)", plotOutput(NS(id, "pworths"))),
             tabPanel("Importance Weights (IW)",plotOutput(NS(id, "iweights"))),
-            tabPanel("Predict", uiOutput(NS(id, "fcts")),
+            tabPanel("Predict", uiOutput(NS(id, "features")),
                      column(7, plotOutput(NS(id, 'prediction')))
                      )
                      
@@ -19,13 +19,8 @@ conjServer <- function(id, data){
     filtered <- reactive({
       data() %>% 
         filter(("All" == input$resp) | (respondent %in% input$resp)) %>%
-        select(-profile, -respondent)
-    })
-    
-    name_factors <- reactive({
-      filtered() %>%
-        select(-ratings) %>%
-        names()
+        select(-profile, -respondent) %>%
+        mutate(across(-ratings, as.factor))
     })
     
     mdl <- reactive(lm(ratings ~ ., data = filtered()))
@@ -39,33 +34,15 @@ conjServer <- function(id, data){
         mutate(iw = iw/sum(iw))
     })
     
-    output$pworths <- renderPlot({
-      part_worths() %>%
-        ggplot(aes(x=level, y=pw, group=1))+
-        geom_point(size=5)+
-        geom_line(linetype=4)+
-        facet_wrap(~feature,
-                   scales = "free") + 
-        labs(x = "", y = "Part-Worths (PW)") +
-        theme_linedraw() +
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.95, hjust = 1))
-    }, res=96)
+    output$pworths <- renderPlot(plot_pworths(part_worths()), res=96)
     
-    output$iweights <- renderPlot({
-      impt_weights() %>%
-        ggplot(aes(y=iw, x = feature)) +
-        geom_col()+
-        labs(x = "", y = "Importance-Weights (IW)") +
-        ylim(c(0, 1)) +
-        geom_text(aes(y = iw, label = paste0(round(iw*100,2), "%")),
-                  vjust = -0.5) +
-        theme_linedraw() +
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.95, hjust = 1))
-    }, res=96)
+    output$iweights <- renderPlot(plot_iweights(impt_weights()), res=96)
     
-    output$fcts <- renderUI({
-      column(5, map(name_factors(), 
-                    function(x) selectInput(NS(id, x), x, 
+    output$features <- renderUI({
+      ft_names <- get_ftnames(filtered())
+      map(ft_names, function(x) freezeReactiveValue(input, x))
+      
+      column(5, map(ft_names, function(x) selectInput(NS(id, x), x, 
                                             choices = pull(filtered(), x),
                                             selected = TRUE,
                                             width="100%"))
@@ -73,20 +50,14 @@ conjServer <- function(id, data){
     })
     
     output$prediction <- renderPlot({
-      newdata <- lapply(name_factors(), function(x) input[[x]])
-      names(newdata) <- name_factors()
-      newdata <- as_tibble(newdata)
+      ft_names <- get_ftnames(model.frame(mdl()))
+      X <- lapply(ft_names, function(x) input[[x]])
+      names(X) <- ft_names
+      y_max <- max(model.frame(mdl())$ratings)*1.4
+      y_min <- -y_max*0.3
       
-      tibble(y_fitted = predict(mdl(), newdata),
-             rating = "") %>%
-        ggplot(aes(x=rating, y=y_fitted))+
-            geom_col()+
-            coord_cartesian(ylim=c(-max(filtered()$ratings)*0.4, max(filtered()$ratings)*1.4))+
-            labs(x = "", y = "", title = "Predicted Rating")+
-            geom_text(aes(y = y_fitted, label = round(y_fitted,2)),
-                  vjust = -0.5)+
-            theme_linedraw()
-            
+      plot_prediction(mdl(), as_tibble(X), y_min, y_max)
+      
       }, res=96)
     
   })
